@@ -22,6 +22,25 @@ document.getElementById("btnNavRanking").addEventListener("click", () => {
 });
 document.getElementById("btnBorrarRanking").addEventListener("click", borrarRankingGlobal);
 document.getElementById("btnReiniciarJuego").addEventListener("click", reiniciarPartida);
+document.getElementById("btnSalirSala").addEventListener("click", async () => {
+  if (!partidaActual) return;
+  
+  const confirmacion = await Swal.fire({
+    title: '¿Salir de la sala?',
+    text: partidaActual.id === miNombre 
+      ? 'Si sales siendo el creador, la sala se cerrará para todos.' 
+      : 'Saldrás de la partida actual.',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Sí, salir',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#e74c3c'
+  });
+
+  if (confirmacion.isConfirmed) {
+    salirDeSala();
+  }
+});
 
 function mostrarSeccion(seccion) {
   document.getElementById("seccionCrear").classList.add("hidden");
@@ -164,7 +183,6 @@ function iniciarPantallaJuego() {
     }, (payload) => {
       partidaActual = payload.new;
       
-      // Si la partida vuelve a iniciar, reiniciamos el control de notificación
       if (partidaActual.estado === 'jugando') {
         notificacionMostrada = false;
       }
@@ -178,6 +196,21 @@ function iniciarPantallaJuego() {
 
       renderizarEstado();
     })
+    .on('postgres_changes', {
+      event: 'DELETE',
+      schema: 'public',
+      table: 'partidas',
+      filter: `id=eq.${partidaActual.id}`
+    }, () => {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Sala cerrada',
+        text: 'El creador ha abandonado la partida y la sala se ha cerrado.',
+        confirmColor: '#2c3e50'
+      });
+      partidaActual = null;
+      mostrarSeccion("unirse");
+    })
     .subscribe();
 }
 
@@ -190,14 +223,12 @@ function renderizarEstado() {
 
   const soyElCreador = partidaActual.id === miNombre;
 
-  // Mostrar el botón 'Volver a Jugar' cuando el juego haya finalizado
   if (partidaActual.estado === 'finalizado') {
     btnReiniciar.classList.remove("hidden");
   } else {
     btnReiniciar.classList.add("hidden");
   }
 
-  // Renderizar Lista de Jugadores
   listaUI.innerHTML = "";
   partidaActual.jugadores.forEach(j => {
     const li = document.createElement("li");
@@ -213,6 +244,9 @@ function renderizarEstado() {
       btnExpulsar.innerHTML = "✕";
       btnExpulsar.className = "btn-expulsar";
       btnExpulsar.title = `Expulsar a ${j.nombre}`;
+      btnExpulsar.style.marginLeft = "10px";
+      btnExpulsar.style.color = "red";
+      btnExpulsar.style.cursor = "pointer";
       btnExpulsar.addEventListener("click", () => expulsarJugador(j.nombre));
       li.appendChild(btnExpulsar);
     }
@@ -222,7 +256,6 @@ function renderizarEstado() {
 
   const jugadorEnTurno = partidaActual.jugadores[partidaActual.turno_index];
 
-  // Estado de la partida
   if (partidaActual.estado === 'esperando') {
     lblInfo.innerText = `Esperando jugadores (${partidaActual.jugadores.length}/${partidaActual.max_jugadores}). Eres "${miNombre}" (${miSimbolo})`;
   } else if (partidaActual.estado === 'jugando') {
@@ -247,7 +280,6 @@ function renderizarEstado() {
     }
   }
 
-  // Dibujar Tablero
   contenedorTablero.style.gridTemplateColumns = `repeat(${partidaActual.dimension}, 42px)`;
   contenedorTablero.innerHTML = "";
 
@@ -280,7 +312,38 @@ async function reiniciarPartida() {
   }
 }
 
-// --- FUNCIÓN EXPULSAR JUGADOR (SÓLO CREADOR) ---
+// --- SALIR DE LA SALA ---
+async function salirDeSala() {
+  if (!partidaActual) return;
+
+  const soyElCreador = partidaActual.id === miNombre;
+
+  if (soyElCreador) {
+    await supabaseClient
+      .from('partidas')
+      .delete()
+      .eq('id', partidaActual.id);
+  } else {
+    const nuevosJugadores = partidaActual.jugadores.filter(j => j.nombre !== miNombre);
+    const listaReasignada = nuevosJugadores.map((j, idx) => ({
+      ...j,
+      simbolo: SIMBOLOS[idx]
+    }));
+
+    await supabaseClient
+      .from('partidas')
+      .update({
+        jugadores: listaReasignada,
+        estado: 'esperando'
+      })
+      .eq('id', partidaActual.id);
+  }
+
+  partidaActual = null;
+  mostrarSeccion("unirse");
+}
+
+// --- EXPULSAR JUGADOR (SÓLO CREADOR) ---
 async function expulsarJugador(nombreAExpulsar) {
   const confirmacion = await Swal.fire({
     title: '¿Expulsar jugador?',
@@ -324,7 +387,7 @@ async function expulsarJugador(nombreAExpulsar) {
   }
 }
 
-// --- EJECUTAR MOVIMIENTO EN EL TABLERO ---
+// --- EJECUTAR MOVIMIENTO ---
 async function efectuarMovimiento(index) {
   if (partidaActual.estado !== 'jugando') return;
 
@@ -371,7 +434,7 @@ async function efectuarMovimiento(index) {
     .eq('id', partidaActual.id);
 }
 
-// --- VERIFICAR CONDICIÓN DE VICTORIA ---
+// --- ALGORITMO COMPLETO DE ALINEACIÓN ---
 function verificarVictoria(tablero, index, n, enRaya, simbolo) {
   const fila = Math.floor(index / n);
   const col = index % n;
@@ -499,3 +562,10 @@ async function borrarRankingGlobal() {
     cargarRanking();
   }
 }
+
+// --- EXPULSAR SI EL CREADOR CIERRA LA PESTAÑA O NAVEGADOR ---
+window.addEventListener('beforeunload', () => {
+  if (partidaActual && partidaActual.id === miNombre) {
+    supabaseClient.from('partidas').delete().eq('id', partidaActual.id);
+  }
+});
