@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3 en Raya Multijugador</title>
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- CDN de Supabase JS v2 -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- CDN de SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+  <h1>3 en Raya Multijugador</h1>
+
+  <nav>
+    <button id="btnNavCrear">Crear Sala</button>
+    <button id="btnNavUnirse">Unirse a Sala</button>
+    <button id="btnNavRanking">Ranking Global</button>
+  </nav>
+
+  <!-- Sección Crear Sala -->
+  <section id="seccionCrear">
+    <h2>Crear Nueva Sala</h2>
+    <form id="formCrear">
+      <input type="text" id="nombreCreador" placeholder="Tu Nombre / Apodo (será el nombre de la sala)" required>
+      <label for="selectJugadores">Cantidad de Jugadores:</label>
+      <select id="selectJugadores">
+        <option value="2">2 Jugadores (3x3 - 3 en raya)</option>
+        <option value="4">4 Jugadores (7x7 - 4 en raya)</option>
+        <option value="6">6 Jugadores (10x10 - 5 en raya)</option>
+      </select>
+      <button type="submit">Generar Sala</button>
+    </form>
+  </section>
+
+  <!-- Sección Unirse a Sala -->
+  <section id="seccionUnirse" class="hidden">
+    <h2>Unirse a una Sala</h2>
+    <form id="formUnirse">
+      <input type="text" id="nombreJugador" placeholder="Tu Nombre / Apodo" required>
+      <input type="text" id="salaIdInput" placeholder="Nombre de la Sala (Nombre del Creador)" required>
+      <button type="submit">Entrar a la Partida</button>
+    </form>
+  </section>
+
+  <!-- Sección Área de Juego -->
+  <section id="seccionJuego" class="hidden">
+    <h2>Sala de Juego</h2>
+    <p>Comparte el nombre de esta sala con tus amigos: <strong id="lblSalaId">---</strong></p>
+    <p class="info-turno" id="lblInfoTurno">Cargando...</p>
+
+    <div id="listaJugadoresContainer">
+      <h3>Jugadores en la Sala:</h3>
+      <ul id="listaJugadores"></ul>
+    </div>
+
+    <div id="tableroContainer">
+      <div id="tablero"></div>
+    </div>
+  </section>
+
+  <!-- Sección Tabla de Clasificaciones (Ranking) -->
+  <section id="seccionRanking" class="hidden">
+    <h2>Tabla de Clasificaciones Global</h2>
+    <div class="tabla-responsive">
+      <table id="tablaRanking">
+        <thead>
+          <tr>
+            <th>Posición</th>
+            <th>Jugador</th>
+            <th>Ganadas (G)</th>
+            <th>Perdidas (P)</th>
+            <th>Empatadas (E)</th>
+          </tr>
+        </thead>
+        <tbody id="bodyRanking">
+          <tr>
+            <td colspan="5" style="text-align:center;">Cargando clasificaciones...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <button id="btnBorrarRanking" style="margin-top: 15px; background-color: #e74c3c;">Borrar Ranking Global</button>
+  </section>
+
+  <!-- Tu código JS principal -->
+  <script src="script.js"></script>
+</body>
+</html>

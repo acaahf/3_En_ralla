@@ -1,0 +1,327 @@
+:root {
+  --color-principal: #2c3e50;
+  --color-secundario: #ecf0f1;
+  --color-acento: #3498db;
+  --color-texto: #2d3436;
+  --fuente-principal: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--fuente-principal);
+  margin: 0;
+  background-color: #f4f6f9;
+  color: var(--color-texto);
+  line-height: 1.6;
+}
+
+h1 {
+  text-align: center;
+  color: var(--color-principal);
+  padding: 20px 0;
+  font-size: 2rem;
+  background-color: white;
+  margin: 0;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+nav {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  background-color: white;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  padding: 10px 20px;
+  gap: 15px;
+}
+
+button {
+  background-color: var(--color-principal);
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  font-size: 15px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+button:hover {
+  background-color: #1a242f;
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+section {
+  max-width: 700px;
+  width: 90%;
+  margin: 30px auto;
+  padding: 30px;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+}
+
+h2 {
+  color: var(--color-principal);
+  font-size: 1.4rem;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+form label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: var(--color-principal);
+}
+
+form input, form select {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 16px;
+  border: 1px solid #dfe6e9;
+  border-radius: 6px;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+form input:focus, form select:focus {
+  border-color: var(--color-acento);
+}
+
+form button {
+  width: 100%;
+  font-weight: 600;
+  background-color: var(--color-acento);
+}
+
+form button:hover {
+  background-color: #2980b9;
+}
+
+.hidden {
+  display: none !important;
+}
+
+p {
+  text-align: center;
+  margin-top: 10px;
+  color: #636e72;
+}
+
+/* --- TABLERO DE JUEGO --- */
+#tableroContainer {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+  width: 100%;
+  overflow-x: auto;
+  padding-bottom: 10px;
+}
+
+#tablero {
+  display: grid;
+  gap: 4px;
+  background-color: #dfe6e9;
+  padding: 8px;
+  border-radius: 8px;
+  max-width: 100%;
+}
+
+#tablero button {
+  width: 42px;
+  height: 42px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  padding: 0;
+  border-radius: 4px;
+  background-color: white;
+  color: var(--color-principal);
+  border: 1px solid #ced6e0;
+}
+
+#tablero button:hover:not(:disabled) {
+  background-color: var(--color-secundario);
+}
+
+#tablero button:disabled {
+  cursor: not-allowed;
+  opacity: 0.85;
+}
+
+.info-turno {
+  text-align: center;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 15px 0;
+  color: var(--color-acento);
+}
+
+/* --- LISTA DE JUGADORES EN SALA Y BOTÓN EXPULSAR --- */
+#listaJugadoresContainer {
+  margin: 15px 0;
+  text-align: center;
+}
+
+#listaJugadores {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+#listaJugadores li {
+  background-color: var(--color-secundario);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-expulsar {
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  font-size: 12px;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-expulsar:hover {
+  background-color: #c0392b;
+}
+
+/* --- TABLA DE RANKING --- */
+.tabla-responsive {
+  width: 100%;
+  overflow-x: auto;
+  margin-top: 15px;
+}
+
+#tablaRanking {
+  width: 100%;
+  min-width: 450px;
+  border-collapse: collapse;
+  text-align: center;
+}
+
+#tablaRanking th, #tablaRanking td {
+  padding: 12px 10px;
+  border-bottom: 1px solid #dfe6e9;
+}
+
+#tablaRanking th {
+  background-color: var(--color-principal);
+  color: white;
+  font-weight: 600;
+}
+
+#tablaRanking tr:nth-child(even) {
+  background-color: #f8f9fa;
+}
+
+#tablaRanking tr:hover {
+  background-color: #f1f2f6;
+}
+
+/* --- SWEETALERT2 --- */
+.swal2-popup {
+  font-family: var(--fuente-principal) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15) !important;
+}
+
+.swal2-title {
+  color: var(--color-principal) !important;
+  font-size: 1.4rem !important;
+}
+
+.swal2-html-container {
+  color: var(--color-texto) !important;
+  font-size: 1rem !important;
+}
+
+.swal2-confirm {
+  border-radius: 6px !important;
+  padding: 10px 24px !important;
+  font-weight: 600 !important;
+}
+
+.swal2-toast {
+  border-radius: 8px !important;
+  background-color: var(--color-principal) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+.swal2-toast .swal2-title {
+  color: white !important;
+  font-size: 0.95rem !important;
+}
+
+/* --- RESPONSIVE CELULARES --- */
+@media (max-width: 600px) {
+  h1 {
+    font-size: 1.4rem;
+    padding: 15px 10px;
+  }
+
+  nav {
+    flex-direction: column;
+    padding: 12px;
+    gap: 10px;
+  }
+
+  nav button {
+    width: 100%;
+    font-size: 14px;
+    padding: 10px;
+  }
+
+  section {
+    width: 95%;
+    margin: 15px auto;
+    padding: 18px 15px;
+  }
+
+  h2 {
+    font-size: 1.2rem;
+  }
+
+  form input, form select {
+    font-size: 14px;
+    padding: 10px;
+  }
+
+  #tablero button {
+    width: 36px;
+    height: 36px;
+    font-size: 0.95rem;
+  }
+
+  .info-turno {
+    font-size: 0.95rem;
+  }
+
+  .swal2-popup {
+    width: 85% !important;
+  }
+}
