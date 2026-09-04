@@ -21,6 +21,7 @@ document.getElementById("btnNavRanking").addEventListener("click", () => {
   cargarRanking();
 });
 document.getElementById("btnBorrarRanking").addEventListener("click", borrarRankingGlobal);
+document.getElementById("btnReiniciarJuego").addEventListener("click", reiniciarPartida);
 
 function mostrarSeccion(seccion) {
   document.getElementById("seccionCrear").classList.add("hidden");
@@ -163,7 +164,11 @@ function iniciarPantallaJuego() {
     }, (payload) => {
       partidaActual = payload.new;
       
-      // Comprobar si el usuario fue expulsado de la sala por el creador
+      // Si la partida vuelve a iniciar, reiniciamos el control de notificación
+      if (partidaActual.estado === 'jugando') {
+        notificacionMostrada = false;
+      }
+
       const sigoEnSala = partidaActual.jugadores.some(j => j.nombre === miNombre);
       if (!sigoEnSala) {
         Swal.fire('Expulsado', 'Has sido expulsado de la sala por el creador.', 'warning');
@@ -181,8 +186,16 @@ function renderizarEstado() {
   const lblInfo = document.getElementById("lblInfoTurno");
   const contenedorTablero = document.getElementById("tablero");
   const listaUI = document.getElementById("listaJugadores");
+  const btnReiniciar = document.getElementById("btnReiniciarJuego");
 
   const soyElCreador = partidaActual.id === miNombre;
+
+  // Mostrar el botón 'Volver a Jugar' cuando el juego haya finalizado
+  if (partidaActual.estado === 'finalizado') {
+    btnReiniciar.classList.remove("hidden");
+  } else {
+    btnReiniciar.classList.add("hidden");
+  }
 
   // Renderizar Lista de Jugadores
   listaUI.innerHTML = "";
@@ -195,7 +208,6 @@ function renderizarEstado() {
       li.style.fontWeight = "bold";
     }
 
-    // Botón de Expulsar (Solo para el creador de la sala)
     if (soyElCreador && j.nombre !== miNombre) {
       const btnExpulsar = document.createElement("button");
       btnExpulsar.innerHTML = "✕";
@@ -246,6 +258,26 @@ function renderizarEstado() {
     btn.addEventListener("click", () => efectuarMovimiento(index));
     contenedorTablero.appendChild(btn);
   });
+}
+
+// --- FUNCIÓN REINICIAR PARTIDA ---
+async function reiniciarPartida() {
+  const tableroLimpio = Array(partidaActual.dimension * partidaActual.dimension).fill("");
+  const nuevoEstado = partidaActual.jugadores.length === partidaActual.max_jugadores ? 'jugando' : 'esperando';
+
+  const { error } = await supabaseClient
+    .from('partidas')
+    .update({
+      tablero: tableroLimpio,
+      turno_index: 0,
+      estado: nuevoEstado,
+      ganador: null
+    })
+    .eq('id', partidaActual.id);
+
+  if (error) {
+    Swal.fire('Error', 'No se pudo reiniciar la partida.', 'error');
+  }
 }
 
 // --- FUNCIÓN EXPULSAR JUGADOR (SÓLO CREADOR) ---
