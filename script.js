@@ -12,6 +12,7 @@ let miSimbolo = null;
 let miNombre = "";
 let canalRealtime = null;
 let notificacionMostrada = false;
+let saliendoVoluntariamente = false; // Bandera para bloquear notificaciones de salida
 
 // --- GESTIÓN DE NAVEGACIÓN Y EVENTOS ---
 document.getElementById("btnNavCrear").addEventListener("click", () => mostrarSeccion("crear"));
@@ -62,6 +63,7 @@ document.getElementById("formCrear").addEventListener("submit", async (e) => {
 
   if (!creador) return;
 
+  saliendoVoluntariamente = false;
   miNombre = creador;
   miSimbolo = SIMBOLOS[0];
 
@@ -113,6 +115,7 @@ document.getElementById("formUnirse").addEventListener("submit", async (e) => {
 
   if (!jugador || !salaId) return;
 
+  saliendoVoluntariamente = false;
   miNombre = jugador;
 
   const { data: partida, error } = await supabaseClient
@@ -181,6 +184,9 @@ function iniciarPantallaJuego() {
       table: 'partidas',
       filter: `id=eq.${partidaActual.id}`
     }, (payload) => {
+      // Si el usuario presionó salir voluntariamente, ignoramos cualquier evento que llegue
+      if (saliendoVoluntariamente) return;
+
       const jugadoresAntes = partidaActual ? (partidaActual.jugadores || []) : [];
       partidaActual = payload.new;
       
@@ -191,9 +197,10 @@ function iniciarPantallaJuego() {
       const sigoEnSala = partidaActual.jugadores.some(j => j.nombre === miNombre);
 
       if (!sigoEnSala) {
-        const fuiExpulsadoPorCreador = jugadoresAntes.some(j => j.nombre === miNombre) && partidaActual.id !== miNombre;
+        // Solo notifica de expulsión si NO fue una salida voluntaria y si estaba en la lista antes
+        const fuiExpulsado = jugadoresAntes.some(j => j.nombre === miNombre);
 
-        if (fuiExpulsadoPorCreador && canalRealtime) {
+        if (fuiExpulsado && !saliendoVoluntariamente) {
           Swal.fire('Expulsado', 'Has sido expulsado de la sala por el creador.', 'warning');
         }
 
@@ -215,6 +222,8 @@ function iniciarPantallaJuego() {
       table: 'partidas',
       filter: `id=eq.${partidaActual.id}`
     }, () => {
+      if (saliendoVoluntariamente) return;
+
       if (partidaActual && partidaActual.id !== miNombre) {
         Swal.fire({
           icon: 'warning',
@@ -329,13 +338,17 @@ async function reiniciarPartida() {
   }
 }
 
-// --- SALIR DE LA SALA (VOLUNTARIAMENTE SIN NOTIFICACIÓN) ---
+// --- SALIR DE LA SALA (SIN NOTIFICACIÓN PARA EL QUE SE SALE) ---
 async function salirDeSala() {
   if (!partidaActual) return;
+
+  // Marcamos que la salida es voluntaria
+  saliendoVoluntariamente = true;
 
   const soyElCreador = partidaActual.id === miNombre;
   const idSala = partidaActual.id;
 
+  // Desconectamos el canal inmediatamente
   if (canalRealtime) {
     supabaseClient.removeChannel(canalRealtime);
     canalRealtime = null;
@@ -343,6 +356,10 @@ async function salirDeSala() {
 
   partidaActual = null;
 
+  // Cambiamos de pantalla al instante sin mostrar ningún alerta
+  mostrarSeccion("unirse");
+
+  // Hacemos la actualización en el servidor en segundo plano
   if (soyElCreador) {
     await supabaseClient
       .from('partidas')
@@ -371,8 +388,6 @@ async function salirDeSala() {
         .eq('id', idSala);
     }
   }
-
-  mostrarSeccion("unirse");
 }
 
 // --- EXPULSAR JUGADOR (SÓLO CREADOR) ---
