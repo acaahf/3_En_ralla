@@ -3,7 +3,7 @@ const SUPABASE_URL = 'https://mcyfzeksrkgwyulsinqx.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_rRnMThz7-T684QBNVphi_w_VvtrFPXb';
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// --- SIMBOLOS DISPONIBLES PARA JUGADORES ---
+// --- SÍMBOLOS DISPONIBLES PARA JUGADORES ---
 const SIMBOLOS = ['X', 'O', 'Δ', '□', '☆', '◇'];
 
 // --- VARIABLES DE ESTADO ---
@@ -13,7 +13,7 @@ let miNombre = "";
 let canalRealtime = null;
 let notificacionMostrada = false;
 
-// --- GESTIÓN DE NAVEGACIÓN ---
+// --- GESTIÓN DE NAVEGACIÓN Y EVENTOS ---
 document.getElementById("btnNavCrear").addEventListener("click", () => mostrarSeccion("crear"));
 document.getElementById("btnNavUnirse").addEventListener("click", () => mostrarSeccion("unirse"));
 document.getElementById("btnNavRanking").addEventListener("click", () => {
@@ -181,6 +181,7 @@ function iniciarPantallaJuego() {
       table: 'partidas',
       filter: `id=eq.${partidaActual.id}`
     }, (payload) => {
+      const jugadoresAntes = partidaActual ? (partidaActual.jugadores || []) : [];
       partidaActual = payload.new;
       
       if (partidaActual.estado === 'jugando') {
@@ -188,8 +189,20 @@ function iniciarPantallaJuego() {
       }
 
       const sigoEnSala = partidaActual.jugadores.some(j => j.nombre === miNombre);
+
       if (!sigoEnSala) {
-        Swal.fire('Expulsado', 'Has sido expulsado de la sala por el creador.', 'warning');
+        const fuiExpulsadoPorCreador = jugadoresAntes.some(j => j.nombre === miNombre) && partidaActual.id !== miNombre;
+
+        if (fuiExpulsadoPorCreador && canalRealtime) {
+          Swal.fire('Expulsado', 'Has sido expulsado de la sala por el creador.', 'warning');
+        }
+
+        if (canalRealtime) {
+          supabaseClient.removeChannel(canalRealtime);
+          canalRealtime = null;
+        }
+
+        partidaActual = null;
         mostrarSeccion("unirse");
         return;
       }
@@ -202,12 +215,14 @@ function iniciarPantallaJuego() {
       table: 'partidas',
       filter: `id=eq.${partidaActual.id}`
     }, () => {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Sala cerrada',
-        text: 'El creador ha abandonado la partida y la sala se ha cerrado.',
-        confirmColor: '#2c3e50'
-      });
+      if (partidaActual && partidaActual.id !== miNombre) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Sala cerrada',
+          text: 'El creador ha abandonado la partida y la sala se ha cerrado.',
+          confirmColor: '#2c3e50'
+        });
+      }
       partidaActual = null;
       mostrarSeccion("unirse");
     })
@@ -216,6 +231,8 @@ function iniciarPantallaJuego() {
 
 // --- RENDERIZAR PANTALLA Y TABLERO DE JUEGO ---
 function renderizarEstado() {
+  if (!partidaActual) return;
+
   const lblInfo = document.getElementById("lblInfoTurno");
   const contenedorTablero = document.getElementById("tablero");
   const listaUI = document.getElementById("listaJugadores");
@@ -312,34 +329,49 @@ async function reiniciarPartida() {
   }
 }
 
-// --- SALIR DE LA SALA ---
+// --- SALIR DE LA SALA (VOLUNTARIAMENTE SIN NOTIFICACIÓN) ---
 async function salirDeSala() {
   if (!partidaActual) return;
 
   const soyElCreador = partidaActual.id === miNombre;
+  const idSala = partidaActual.id;
+
+  if (canalRealtime) {
+    supabaseClient.removeChannel(canalRealtime);
+    canalRealtime = null;
+  }
+
+  partidaActual = null;
 
   if (soyElCreador) {
     await supabaseClient
       .from('partidas')
       .delete()
-      .eq('id', partidaActual.id);
+      .eq('id', idSala);
   } else {
-    const nuevosJugadores = partidaActual.jugadores.filter(j => j.nombre !== miNombre);
-    const listaReasignada = nuevosJugadores.map((j, idx) => ({
-      ...j,
-      simbolo: SIMBOLOS[idx]
-    }));
-
-    await supabaseClient
+    const { data: salaServidor } = await supabaseClient
       .from('partidas')
-      .update({
-        jugadores: listaReasignada,
-        estado: 'esperando'
-      })
-      .eq('id', partidaActual.id);
+      .select('*')
+      .eq('id', idSala)
+      .single();
+
+    if (salaServidor) {
+      const nuevosJugadores = salaServidor.jugadores.filter(j => j.nombre !== miNombre);
+      const listaReasignada = nuevosJugadores.map((j, idx) => ({
+        ...j,
+        simbolo: SIMBOLOS[idx]
+      }));
+
+      await supabaseClient
+        .from('partidas')
+        .update({
+          jugadores: listaReasignada,
+          estado: 'esperando'
+        })
+        .eq('id', idSala);
+    }
   }
 
-  partidaActual = null;
   mostrarSeccion("unirse");
 }
 
