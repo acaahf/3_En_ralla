@@ -45,14 +45,15 @@
     </form>
   </section>
 
- <!-- Sección Área de Juego -->
+  <!-- Sección Área de Juego -->
   <section id="seccionJuego" class="hidden">
     <h2>Sala de Juego</h2>
     <p>Comparte el nombre de esta sala con tus amigos: <strong id="lblSalaId">---</strong></p>
     <p class="info-turno" id="lblInfoTurno">Cargando...</p>
 
-    <!-- Botón Volver a Jugar (se mostrará cuando finalice la partida) -->
-    <button id="btnReiniciarJuego" class="hidden" style="margin-bottom: 15px; background-color: #27ae60;">Volver a Jugar</button>
+    <!-- Botones de Acción en el Juego -->
+    <button id="btnSalirSala" style="margin-bottom: 15px; background-color: #e74c3c; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">Salir de la Sala</button>
+    <button id="btnReiniciarJuego" class="hidden" style="margin-bottom: 15px; background-color: #27ae60; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">Volver a Jugar</button>
 
     <div id="listaJugadoresContainer">
       <h3>Jugadores en la Sala:</h3>
@@ -85,7 +86,7 @@
         </tbody>
       </table>
     </div>
-    <button id="btnBorrarRanking" style="margin-top: 15px; background-color: #e74c3c;">Borrar Ranking Global</button>
+    <button id="btnBorrarRanking" style="margin-top: 15px; background-color: #e74c3c; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">Borrar Ranking Global</button>
   </section>
 
   <!-- Tu código JS principal -->
